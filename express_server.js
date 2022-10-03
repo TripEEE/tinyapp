@@ -1,4 +1,5 @@
 const express = require("express");
+const { url } = require("inspector");
 const { stripVTControlCharacters } = require("util");
 const app = express()
 const PORT = 8080
@@ -28,9 +29,13 @@ app.get("/urls", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  const newShortURL = generateRandomString()
-  console.log(req.body); // Log the POST request body to the console
-  res.send("Ok"); // Respond with 'Ok' (we will replace this)
+  const newShortURL = generateRandomString() //urlDatabase[newShortURL] = newLongURL
+  const newLongURL = req.body.longURL //what the user inputs into the text field
+  urlDatabase[newShortURL] = newLongURL
+  console.log(urlDatabase)
+  console.log(newLongURL); // Log the POST request body to the console
+  res.redirect(`/urls/:${newShortURL}`)
+  res.send(newShortURL);
 });
 
 app.get("/urls/new", (req, res) => {
