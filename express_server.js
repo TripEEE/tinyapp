@@ -1,17 +1,40 @@
-const express = require("express")
+const express = require("express");
+const { stripVTControlCharacters } = require("util");
 const app = express()
 const PORT = 8080
 
 app.set('view engine', 'ejs');
+
+app.use(express.urlencoded({ extended: true }))
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 }
 
+const generateRandomString = function () {
+  let output = ''
+  const char = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  const charLength = char.length
+  for (let i = 0; i < 6; i++) {
+    output += char.charAt(Math.floor(Math.random() * charLength))
+  }
+  return output
+}
+
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase }; //urlDatabase becomes urls in urls_index.js
   res.render("urls_index", templateVars);
+});
+
+app.post("/urls", (req, res) => {
+  const newShortURL = generateRandomString()
+  console.log(req.body); // Log the POST request body to the console
+  res.send("Ok"); // Respond with 'Ok' (we will replace this)
+});
+
+app.get("/urls/new", (req, res) => {
+  res.render("urls_new");
 });
 
 app.get("/urls/:id", (req, res) => {
