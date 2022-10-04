@@ -24,7 +24,7 @@ const generateRandomString = function () {
 }
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase }; //urlDatabase becomes urls in urls_index.js
+  const templateVars = { urls: urlDatabase }; //urlDatabase above becomes urls in urls_index.js
   res.render("urls_index", templateVars);
 });
 
@@ -45,7 +45,7 @@ app.get("/urls/new", (req, res) => {
 
 
 app.get(`/u/:id`, (req, res) => {
-  const longURL = urlDatabase[req.params.id]
+  const longURL = urlDatabase[req.params.id] //req.params is whatever is in your url
   if (longURL) {
     res.redirect(longURL);
   } else {
