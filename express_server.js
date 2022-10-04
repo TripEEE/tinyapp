@@ -3,10 +3,13 @@ const { url } = require("inspector");
 const { stripVTControlCharacters } = require("util");
 const app = express()
 const PORT = 8080
+const cookieParser = require('cookie-parser')
 
 app.set('view engine', 'ejs');
 
 app.use(express.urlencoded({ extended: true }))
+
+app.use(cookieParser())
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -23,11 +26,22 @@ const generateRandomString = function () {
   return output
 }
 
+//COOKIES
+app.post("/login", (req, res) => {
+  const usernameKey = Object.keys((req.body)).join('') //grab key of req.body
+  const username = req.body.username //grab value of that key
+  cookieUsername = res.cookie(usernameKey, username)
+  //res.cookie has 2 parameters, name^^^^^ and value^^^^^^^
+  res.redirect("/urls")
+})
+
+//BROWSE
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase }; //urlDatabase above becomes urls in urls_index.js
+  const templateVars = { urls: urlDatabase, username: req.cookies["username"] }; //urlDatabase above becomes urls in urls_index.js
   res.render("urls_index", templateVars);
 });
 
+//ADD
 app.post("/urls", (req, res) => {
   const newShortURL = generateRandomString() //urlDatabase[newShortURL] = newLongURL
   const newLongURL = req.body.longURL //what the user inputs into the text field
@@ -39,11 +53,13 @@ app.post("/urls", (req, res) => {
   res.send(newShortURL);
 });
 
+//READ
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars = { username: req.cookies["username"] }
+  res.render("urls_new", templateVars);
 });
 
-
+//READ
 app.get(`/u/:id`, (req, res) => {
   const longURL = urlDatabase[req.params.id] //req.params is whatever is in your url
   if (longURL) {
@@ -53,12 +69,14 @@ app.get(`/u/:id`, (req, res) => {
   }
 });
 
+//READ
 app.get("/urls/:id", (req, res) => {
   // urls/b2xVn2
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
   res.render("urls_show", templateVars);
 });
 
+//EDIT
 app.post("/urls/:id", (req, res) => {
   //update the value of the stored
   //long URL based on the value of the new body
@@ -70,6 +88,7 @@ app.post("/urls/:id", (req, res) => {
   res.redirect('/urls')
 })
 
+//DELETE
 app.post("/urls/:id/delete", (req, res) => {
   delete urlDatabase[req.params.id] //deletes the respective URL
   res.redirect("/urls") //with the redirect to original page it looks like all we did was remove it
