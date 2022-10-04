@@ -20,8 +20,7 @@
             <%= id %>
           </a>
         </p>
-        <form method="POST" action="/urls">
-          <!--how to get input here?-->
+        <form method="POST" action="/urls/<%= id %>">
           <input type="text" id="longURL" name="longURL">
           <button>SUBMIT</button>
         </form>

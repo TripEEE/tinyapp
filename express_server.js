@@ -31,11 +31,11 @@ app.get("/urls", (req, res) => {
 app.post("/urls", (req, res) => {
   const newShortURL = generateRandomString() //urlDatabase[newShortURL] = newLongURL
   const newLongURL = req.body.longURL //what the user inputs into the text field
+  // console.log(req.body)
   urlDatabase[newShortURL] = newLongURL
-  console.log(urlDatabase)
-  console.log(newLongURL); // Log the POST request body to the console
-  // res.redirect(newLongURL)
-  res.redirect(`/urls/:${newShortURL}`)
+  // console.log(urlDatabase)
+  // console.log(newLongURL); // Log the POST request body to the console
+  res.redirect(`/urls/${newShortURL}`)
   res.send(newShortURL);
 });
 
@@ -58,6 +58,17 @@ app.get("/urls/:id", (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
   res.render("urls_show", templateVars);
 });
+
+app.post("/urls/:id", (req, res) => {
+  //update the value of the stored
+  //long URL based on the value of the new body
+  //need to update an existing longURL
+  // //
+  // console.log("Hi I'm here")
+  const existingURL = req.params.id
+  urlDatabase[existingURL] = req.body.longURL
+  res.redirect('/urls')
+})
 
 app.post("/urls/:id/delete", (req, res) => {
   delete urlDatabase[req.params.id] //deletes the respective URL
