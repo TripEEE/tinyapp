@@ -59,6 +59,11 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+app.post("/urls/:id/delete", (req, res) => {
+  delete urlDatabase[req.params.id] //deletes the respective URL
+  res.redirect("/urls") //with the redirect to original page it looks like all we did was remove it
+})
+
 app.get("/", (req, res) => {
   res.send("Hello!")
 })

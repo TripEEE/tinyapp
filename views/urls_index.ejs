@@ -20,6 +20,7 @@
           <tr>
             <th scope="col">Short URL ID</th>
             <th scope="col">Long URL</th>
+            <th scope="col">DELETE</th>
           </tr>
         </thead>
         <tbody>
@@ -29,10 +30,19 @@
               <td>
                 <a href="#">
                   <%= shortId %>
+                    <!--Column 1-->
                 </a>
               </td>
               <td>
                 <%= urls[shortId] %>
+                  <!--Column 2-->
+              </td>
+              <td>
+                <form method="POST" action="/urls/<%= shortId %>/delete">
+                  <!--Column 3-->
+                  <!-- notice above ^^^ how the EJS syntax works within the action attribute-->
+                  <button>Delete</button>
+                </form>
               </td>
             </tr>
             <% } %>
