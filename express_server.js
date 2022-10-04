@@ -34,12 +34,23 @@ app.post("/urls", (req, res) => {
   urlDatabase[newShortURL] = newLongURL
   console.log(urlDatabase)
   console.log(newLongURL); // Log the POST request body to the console
+  // res.redirect(newLongURL)
   res.redirect(`/urls/:${newShortURL}`)
   res.send(newShortURL);
 });
 
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
+});
+
+
+app.get(`/u/:id`, (req, res) => {
+  const longURL = urlDatabase[req.params.id]
+  if (longURL) {
+    res.redirect(longURL);
+  } else {
+    res.redirect('/urls')
+  }
 });
 
 app.get("/urls/:id", (req, res) => {
