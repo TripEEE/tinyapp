@@ -1,19 +1,30 @@
 const express = require("express");
 const { url } = require("inspector");
+const cookieParser = require('cookie-parser')
 const { stripVTControlCharacters } = require("util");
 const app = express()
 const PORT = 8080
-const cookieParser = require('cookie-parser')
 
 app.set('view engine', 'ejs');
-
 app.use(express.urlencoded({ extended: true }))
-
 app.use(cookieParser())
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
+}
+
+const users = {
+  userRandomID: {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur"
+  },
+  user2RandomID: {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk"
+  }
 }
 
 const generateRandomString = function () {
@@ -51,6 +62,12 @@ app.get("/urls/new", (req, res) => {
 });
 
 //READ
+app.get("/urls/register", (req, res) => {
+  const templateVars = { username: req.cookies["username"] }
+  res.render("urls_registration", templateVars)
+})
+
+//READ
 app.get(`/u/:id`, (req, res) => {
   const longURL = urlDatabase[req.params.id] //req.params is whatever is in your url
   if (longURL) {
@@ -66,6 +83,15 @@ app.get("/urls/:id", (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], username: req.cookies["username"] };
   res.render("urls_show", templateVars);
 });
+
+//EDIT
+//add an id, email, and password to users object
+app.post("/urls/register", (req, res) => {
+  const newUserID = generateRandomString()
+  const newEmail = req.body.email
+  const newPassword = req.body.password
+  users[newUserID] = { id: newUserID, email: newEmail, password: newPassword }
+})
 
 //EDIT
 app.post("/urls/:id", (req, res) => {
@@ -89,10 +115,7 @@ app.post("/urls/:id/delete", (req, res) => {
 app.post("/urls", (req, res) => {
   const newShortURL = generateRandomString() //urlDatabase[newShortURL] = newLongURL
   const newLongURL = req.body.longURL //what the user inputs into the text field
-  // console.log(req.body)
   urlDatabase[newShortURL] = newLongURL
-  // console.log(urlDatabase)
-  // console.log(newLongURL); // Log the POST request body to the console
   res.redirect(`/urls/${newShortURL}`)
   res.send(newShortURL);
 });
@@ -101,9 +124,11 @@ app.post("/urls", (req, res) => {
 app.post("/login", (req, res) => {
   const username = req.body.username //grab value of that key
   res.cookie('username', username)
-  //res.cookie has 2 parameters, name^^^^^ and value^^^^^^^
+  //res.cookie has 2 parameters, name and value
   res.redirect("/urls")
 })
+
+//COOKIES
 
 app.post("/logout", (req, res) => {
   res.clearCookie('username')
