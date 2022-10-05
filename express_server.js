@@ -2,6 +2,7 @@ const express = require("express");
 const { url } = require("inspector");
 const cookieParser = require('cookie-parser')
 const { stripVTControlCharacters } = require("util");
+const { urlencoded } = require("express");
 const app = express()
 const PORT = 8080
 
@@ -27,6 +28,27 @@ const users = {
   }
 }
 
+const userIdByEmailIndex = {
+  'user@example.com': 'userRandomID',
+  'user2@example.com': 'user2RandomID'
+}
+
+const userIdByPasswordIndex = {
+  'purple-monkey-dinosaur': 'userRandomID',
+  'dishwasher-funk': 'user2RandomID'
+}
+
+//HELPER FUNCTIONS
+const createNewUser = function (newUser) {
+  users[newUser.id] = newUser
+  userIdByEmailIndex[newUser.email] = newUser.id
+}
+
+const getUserByEmail = function (email) {
+  const userId = userIdByEmailIndex[email]
+  return users[userId]
+}
+
 const generateRandomString = function () {
   let output = ''
   const char = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -50,20 +72,25 @@ app.get("/hello", (req, res) => {
 })
 
 //BROWSE
+app.get("/login", (req, res) => {
+  res.render("urls_login")
+})
+
+//BROWSE
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase, username: req.cookies["username"] }; //urlDatabase above becomes urls in urls_index.js
+  const templateVars = { urls: urlDatabase, user: users[req.cookies["user_id"]] }; //urlDatabase above becomes urls in urls_index.js
   res.render("urls_index", templateVars);
 });
 
 //READ
 app.get("/urls/new", (req, res) => {
-  const templateVars = { username: req.cookies["username"] }
+  const templateVars = { user: users[req.cookies["user_id"]] }
   res.render("urls_new", templateVars);
 });
 
 //READ
-app.get("/urls/register", (req, res) => {
-  const templateVars = { username: req.cookies["username"] }
+app.get("/register", (req, res) => {
+  const templateVars = { user: users[req.cookies["user_id"]] }
   res.render("urls_registration", templateVars)
 })
 
@@ -80,17 +107,30 @@ app.get(`/u/:id`, (req, res) => {
 //READ
 app.get("/urls/:id", (req, res) => {
   // urls/b2xVn2
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], username: req.cookies["username"] };
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user: users[req.cookies["user_id"]] };
   res.render("urls_show", templateVars);
 });
 
 //EDIT
 //add an id, email, and password to users object
-app.post("/urls/register", (req, res) => {
+app.post("/register", (req, res) => {
   const newUserID = generateRandomString()
   const newEmail = req.body.email
+  const existingUser = getUserByEmail(newEmail) //helper function
   const newPassword = req.body.password
-  users[newUserID] = { id: newUserID, email: newEmail, password: newPassword }
+  let user = { id: newUserID, email: newEmail, password: newPassword }
+  //lookup the specific user object in the users object using the user_id cookie value
+  if (newEmail === "" || newPassword === "") {
+    res.status(400).send("400: Not Found")
+    return
+  }
+  if (existingUser !== undefined) {
+    res.status(400).send("400: Not Found")
+    return
+  }
+  createNewUser(user) //helper function
+  res.cookie('user_id', newUserID)
+  res.redirect('/urls')
 })
 
 //EDIT
@@ -121,18 +161,29 @@ app.post("/urls", (req, res) => {
 });
 
 //COOKIES
+
 app.post("/login", (req, res) => {
-  const username = req.body.username //grab value of that key
-  res.cookie('username', username)
-  //res.cookie has 2 parameters, name and value
-  res.redirect("/urls")
+  const email = req.body.email
+  const user = getUserByEmail(email)
+  const password = req.body.password
+  if (user === undefined) {
+    res.status(403).send("403: Not Found")
+    return
+  } else if (user.email === email && user.password !== password) {
+    res.status(403).send("403: Not Found")
+    return
+  } else {
+    res.cookie('user_id', user.id)
+    //res.cookie has 2 parameters, name and value
+    res.redirect("/urls")
+  }
 })
 
 //COOKIES
 
 app.post("/logout", (req, res) => {
-  res.clearCookie('username')
-  res.redirect("/urls")
+  res.clearCookie('user_id')
+  res.redirect("/login")
 })
 
 app.listen(PORT, () => {
