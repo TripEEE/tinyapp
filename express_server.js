@@ -26,31 +26,22 @@ const generateRandomString = function () {
   return output
 }
 
-//COOKIES
-app.post("/login", (req, res) => {
-  const usernameKey = Object.keys((req.body)).join('') //grab key of req.body
-  const username = req.body.username //grab value of that key
-  cookieUsername = res.cookie(usernameKey, username)
-  //res.cookie has 2 parameters, name^^^^^ and value^^^^^^^
-  res.redirect("/urls")
+app.get("/", (req, res) => {
+  res.send("Hello!")
+})
+
+app.get("/urls.json"), (req, res) => {
+  res.json(urlDatabase)
+}
+
+app.get("/hello", (req, res) => {
+  res.send("<html><body>Hello<b>World</b></body></html>\n")
 })
 
 //BROWSE
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase, username: req.cookies["username"] }; //urlDatabase above becomes urls in urls_index.js
   res.render("urls_index", templateVars);
-});
-
-//ADD
-app.post("/urls", (req, res) => {
-  const newShortURL = generateRandomString() //urlDatabase[newShortURL] = newLongURL
-  const newLongURL = req.body.longURL //what the user inputs into the text field
-  // console.log(req.body)
-  urlDatabase[newShortURL] = newLongURL
-  // console.log(urlDatabase)
-  // console.log(newLongURL); // Log the POST request body to the console
-  res.redirect(`/urls/${newShortURL}`)
-  res.send(newShortURL);
 });
 
 //READ
@@ -72,7 +63,7 @@ app.get(`/u/:id`, (req, res) => {
 //READ
 app.get("/urls/:id", (req, res) => {
   // urls/b2xVn2
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], username: req.cookies["username"] };
   res.render("urls_show", templateVars);
 });
 
@@ -94,17 +85,29 @@ app.post("/urls/:id/delete", (req, res) => {
   res.redirect("/urls") //with the redirect to original page it looks like all we did was remove it
 })
 
-app.get("/", (req, res) => {
-  res.send("Hello!")
+//ADD
+app.post("/urls", (req, res) => {
+  const newShortURL = generateRandomString() //urlDatabase[newShortURL] = newLongURL
+  const newLongURL = req.body.longURL //what the user inputs into the text field
+  // console.log(req.body)
+  urlDatabase[newShortURL] = newLongURL
+  // console.log(urlDatabase)
+  // console.log(newLongURL); // Log the POST request body to the console
+  res.redirect(`/urls/${newShortURL}`)
+  res.send(newShortURL);
+});
+
+//COOKIES
+app.post("/login", (req, res) => {
+  const username = req.body.username //grab value of that key
+  res.cookie('username', username)
+  //res.cookie has 2 parameters, name^^^^^ and value^^^^^^^
+  res.redirect("/urls")
 })
 
-
-app.get("/urls.json"), (req, res) => {
-  res.json(urlDatabase)
-}
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello<b>World</b></body></html>\n")
+app.post("/logout", (req, res) => {
+  res.clearCookie('username')
+  res.redirect("/urls")
 })
 
 app.listen(PORT, () => {
