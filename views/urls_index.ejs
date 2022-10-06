@@ -29,7 +29,7 @@
           <% for (let shortId in urls) { %>
             <tr>
               <td>
-                <a href="#">
+                <a href=" <%=urls[shortId]%>">
                   <%= shortId %>
                     <!--Column 1-->
                 </a>
@@ -39,8 +39,8 @@
                   <!--Column 2-->
               </td>
               <td>
-                <a href="/urls/<%= shortId %>">
-                  <button>Edit</button>
+                <a href=" /urls/<%=shortId %>">
+                  <button type="submit" formmethod="POST">Edit</button>
                 </a>
               </td>
               <td>
