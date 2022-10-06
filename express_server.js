@@ -3,6 +3,7 @@ const { url } = require("inspector");
 const cookieParser = require('cookie-parser')
 const { stripVTControlCharacters } = require("util");
 const { urlencoded } = require("express");
+const { request } = require("http");
 const app = express()
 const PORT = 8080
 
@@ -19,7 +20,7 @@ const users = {
   userRandomID: {
     id: "userRandomID",
     email: "user@example.com",
-    password: "purple-monkey-dinosaur"
+    password: "test123!"
   },
   user2RandomID: {
     id: "user2RandomID",
@@ -73,7 +74,13 @@ app.get("/hello", (req, res) => {
 
 //BROWSE
 app.get("/login", (req, res) => {
-  res.render("urls_login")
+  for (let key in users) {
+    const user = users[key]
+    if (user.id === req.cookies['user_id']) {
+      return res.redirect("/urls")
+    }
+  }
+  res.render("urls_login", { user: null })
 })
 
 //BROWSE
@@ -85,18 +92,36 @@ app.get("/urls", (req, res) => {
 //READ
 app.get("/urls/new", (req, res) => {
   const templateVars = { user: users[req.cookies["user_id"]] }
-  res.render("urls_new", templateVars);
+  for (let key in users) {
+    const user = users[key]
+    if (user.id !== req.cookies['user_id']) {
+      return res.redirect("/login")
+    } else {
+      res.render("urls_new", templateVars);
+    }
+  }
 });
 
 //READ
 app.get("/register", (req, res) => {
+  for (let key in users) {
+    const user = users[key]
+    if (user.id === req.cookies['user_id']) {
+      return res.redirect("/urls")
+    }
+  }
   const templateVars = { user: users[req.cookies["user_id"]] }
+  // const templateVars = { user: false }
   res.render("urls_registration", templateVars)
 })
 
 //READ
 app.get(`/u/:id`, (req, res) => {
-  const longURL = urlDatabase[req.params.id] //req.params is whatever is in your url
+  const longURL = urlDatabase[req.params.id]
+  console.log(longURL)
+  if (longURL === undefined) {
+    res.send("<html><body>The url does not exist!</body></html>\n");
+  }
   if (longURL) {
     res.redirect(longURL);
   } else {
@@ -119,7 +144,6 @@ app.post("/register", (req, res) => {
   const existingUser = getUserByEmail(newEmail) //helper function
   const newPassword = req.body.password
   let user = { id: newUserID, email: newEmail, password: newPassword }
-  //lookup the specific user object in the users object using the user_id cookie value
   if (newEmail === "" || newPassword === "") {
     res.status(400).send("400: Not Found")
     return
@@ -129,6 +153,7 @@ app.post("/register", (req, res) => {
     return
   }
   createNewUser(user) //helper function
+  //lookup the specific user object in the users object using the user_id cookie value
   res.cookie('user_id', newUserID)
   res.redirect('/urls')
 })
@@ -153,6 +178,9 @@ app.post("/urls/:id/delete", (req, res) => {
 
 //ADD
 app.post("/urls", (req, res) => {
+  if (req.cookies['user_id'] === undefined) {
+    res.send("<html><body>You need to log in!</body></html>\n");
+  }
   const newShortURL = generateRandomString() //urlDatabase[newShortURL] = newLongURL
   const newLongURL = req.body.longURL //what the user inputs into the text field
   urlDatabase[newShortURL] = newLongURL
