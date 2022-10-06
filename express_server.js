@@ -11,10 +11,21 @@ app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }))
 app.use(cookieParser())
 
+// const urlDatabase = {
+//   "b2xVn2": "http://www.lighthouselabs.ca",
+//   "9sm5xK": "http://www.google.com"
+// }
+
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
-}
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW",
+  },
+};
 
 const users = {
   userRandomID: {
@@ -32,11 +43,6 @@ const users = {
 const userIdByEmailIndex = {
   'user@example.com': 'userRandomID',
   'user2@example.com': 'user2RandomID'
-}
-
-const userIdByPasswordIndex = {
-  'purple-monkey-dinosaur': 'userRandomID',
-  'dishwasher-funk': 'user2RandomID'
 }
 
 //HELPER FUNCTIONS
@@ -85,7 +91,7 @@ app.get("/login", (req, res) => {
 
 //BROWSE
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase, user: users[req.cookies["user_id"]] }; //urlDatabase above becomes urls in urls_index.js
+  const templateVars = { urlDatabase, user: users[req.cookies["user_id"]] }; //urlDatabase above becomes urls in urls_index.js
   res.render("urls_index", templateVars);
 });
 
@@ -116,14 +122,14 @@ app.get("/register", (req, res) => {
 })
 
 //READ
+
 app.get(`/u/:id`, (req, res) => {
   const longURL = urlDatabase[req.params.id]
-  console.log(longURL)
   if (longURL === undefined) {
     res.send("<html><body>The url does not exist!</body></html>\n");
   }
   if (longURL) {
-    res.redirect(longURL);
+    res.redirect(longURL.longURL);
   } else {
     res.redirect('/urls')
   }
@@ -166,7 +172,7 @@ app.post("/urls/:id", (req, res) => {
   // //
   // console.log("Hi I'm here")
   const existingURL = req.params.id
-  urlDatabase[existingURL] = req.body.longURL
+  urlDatabase[existingURL] = req.body
   res.redirect('/urls')
 })
 
@@ -182,9 +188,9 @@ app.post("/urls", (req, res) => {
     res.send("<html><body>You need to log in!</body></html>\n");
   }
   const newShortURL = generateRandomString() //urlDatabase[newShortURL] = newLongURL
-  const newLongURL = req.body.longURL //what the user inputs into the text field
+  const newLongURL = req.body //what the user inputs into the text field
   urlDatabase[newShortURL] = newLongURL
-  res.redirect(`/urls/${newShortURL}`)
+  res.redirect(`/urls`)
   res.send(newShortURL);
 });
 

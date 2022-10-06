@@ -26,25 +26,25 @@
         </thead>
         <tbody>
           <!-- urls is urlDatabase in express_server.js -->
-          <% for (let shortId in urls) { %>
+          <% for (let shortURL in urlDatabase) { %>
             <tr>
               <td>
-                <a href=" <%=urls[shortId]%>">
-                  <%= shortId %>
+                <a href=" <%=urlDatabase[shortURL].longURL%>">
+                  <%= shortURL %>
                     <!--Column 1-->
                 </a>
               </td>
               <td>
-                <%= urls[shortId] %>
+                <%= urlDatabase[shortURL].longURL %>
                   <!--Column 2-->
               </td>
               <td>
-                <a href=" /urls/<%=shortId %>">
+                <a href=" /urls/<%=shortURL %>">
                   <button type="submit" formmethod="POST">Edit</button>
                 </a>
               </td>
               <td>
-                <form method="POST" action="/urls/<%= shortId %>/delete">
+                <form method="POST" action="/urls/<%= shortURL %>/delete">
                   <!--Column 3-->
                   <!-- notice above ^^^ how the EJS syntax works within the action attribute-->
                   <button>Delete</button>
