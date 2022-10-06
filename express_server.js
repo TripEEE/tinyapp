@@ -11,11 +11,6 @@ app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }))
 app.use(cookieParser())
 
-// const urlDatabase = {
-//   "b2xVn2": "http://www.lighthouselabs.ca",
-//   "9sm5xK": "http://www.google.com"
-// }
-
 const urlDatabase = {
   b6UTxQ: {
     longURL: "https://www.tsn.ca",
@@ -23,13 +18,13 @@ const urlDatabase = {
   },
   i3BoGr: {
     longURL: "https://www.google.ca",
-    userID: "aJ48lW",
+    userID: "user2RandomID",
   },
 };
 
 const users = {
-  userRandomID: {
-    id: "userRandomID",
+  aJ48lW: {
+    id: "aJ48lW",
     email: "user@example.com",
     password: "test123!"
   },
@@ -41,7 +36,7 @@ const users = {
 }
 
 const userIdByEmailIndex = {
-  'user@example.com': 'userRandomID',
+  'user@example.com': 'aJ48lW',
   'user2@example.com': 'user2RandomID'
 }
 
@@ -54,6 +49,18 @@ const createNewUser = function (newUser) {
 const getUserByEmail = function (email) {
   const userId = userIdByEmailIndex[email]
   return users[userId]
+}
+
+const urlsForUser = function (userId) {
+  const urls = {}
+  const ids = Object.keys(urlDatabase) //shortURls
+  for (let id of ids) { //objects of shortURLs
+    const url = urlDatabase[id] //
+    if (userId === url.userID) {
+      urls[id] = url
+    }
+  }
+  return urls
 }
 
 const generateRandomString = function () {
@@ -91,7 +98,12 @@ app.get("/login", (req, res) => {
 
 //BROWSE
 app.get("/urls", (req, res) => {
-  const templateVars = { urlDatabase, user: users[req.cookies["user_id"]] }; //urlDatabase above becomes urls in urls_index.js
+  const userId = req.cookies["user_id"]
+  if (userId === undefined) {
+    res.send("<html><body>You need to log in!</body></html>\n");
+  }
+  const urls = urlsForUser(userId)
+  const templateVars = { urls, user: users[userId] }; //urlDatabase above becomes urls in urls_index.js
   res.render("urls_index", templateVars);
 });
 
@@ -131,13 +143,23 @@ app.get(`/u/:id`, (req, res) => {
   if (longURL) {
     res.redirect(longURL.longURL);
   } else {
-    res.redirect('/urls')
+    redirect("/urls")
   }
 });
 
 //READ
 app.get("/urls/:id", (req, res) => {
-  // urls/b2xVn2
+  const userId = req.cookies['user_id']
+  if (userId === undefined) { //if they are not logged in
+    res.status(403).send("403: Not Found")
+  }
+  const urlsForUserByUrlId = urlsForUser(userId)
+  const url = urlsForUserByUrlId[req.params.id]
+  if (url === undefined) {
+    res.status(403).send("403: Not Found")
+    return
+  }
+
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user: users[req.cookies["user_id"]] };
   res.render("urls_show", templateVars);
 });
@@ -169,8 +191,10 @@ app.post("/urls/:id", (req, res) => {
   //update the value of the stored
   //long URL based on the value of the new body
   //need to update an existing longURL
-  // //
-  // console.log("Hi I'm here")
+  const userId = req.cookies['user_id']
+  if (userId !== users[req.params.id]) {
+    res.send("<html><body>Only the owner of the URL can edit!</body></html>\n");
+  }
   const existingURL = req.params.id
   urlDatabase[existingURL] = req.body
   res.redirect('/urls')
@@ -178,6 +202,10 @@ app.post("/urls/:id", (req, res) => {
 
 //DELETE
 app.post("/urls/:id/delete", (req, res) => {
+  const userId = req.cookies['user_id']
+  if (userId !== users[req.params.id]) {
+    res.send("<html><body>Only the owner of the URL can delete!</body></html>\n");
+  }
   delete urlDatabase[req.params.id] //deletes the respective URL
   res.redirect("/urls") //with the redirect to original page it looks like all we did was remove it
 })
