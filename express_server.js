@@ -4,6 +4,7 @@ const cookieParser = require('cookie-parser')
 const { stripVTControlCharacters } = require("util");
 const { urlencoded } = require("express");
 const { request } = require("http");
+const bcrypt = require("bcryptjs");
 const app = express()
 const PORT = 8080
 
@@ -35,20 +36,14 @@ const users = {
   }
 }
 
-const userIdByEmailIndex = {
-  'user@example.com': 'aJ48lW',
-  'user2@example.com': 'user2RandomID'
-}
-
 //HELPER FUNCTIONS
-const createNewUser = function (newUser) {
-  users[newUser.id] = newUser
-  userIdByEmailIndex[newUser.email] = newUser.id
-}
 
 const getUserByEmail = function (email) {
-  const userId = userIdByEmailIndex[email]
-  return users[userId]
+  for (let id in users) {
+    if (users[id].email === email) {
+      return users[id]
+    }
+  }
 }
 
 const urlsForUser = function (userId) {
@@ -160,7 +155,7 @@ app.get("/urls/:id", (req, res) => {
     return
   }
 
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user: users[req.cookies["user_id"]] };
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user: users[userId] };
   res.render("urls_show", templateVars);
 });
 
@@ -171,8 +166,9 @@ app.post("/register", (req, res) => {
   const newEmail = req.body.email
   const existingUser = getUserByEmail(newEmail) //helper function
   const newPassword = req.body.password
-  let user = { id: newUserID, email: newEmail, password: newPassword }
-  if (newEmail === "" || newPassword === "") {
+  const hashedPassword = bcrypt.hashSync(newPassword, 10)
+  let user = { id: newUserID, email: newEmail, password: hashedPassword }
+  if (newEmail === "" || hashedPassword === "") {
     res.status(400).send("400: Not Found")
     return
   }
@@ -180,7 +176,7 @@ app.post("/register", (req, res) => {
     res.status(400).send("400: Not Found")
     return
   }
-  createNewUser(user) //helper function
+  users[newUserID] = user //helper function
   //lookup the specific user object in the users object using the user_id cookie value
   res.cookie('user_id', newUserID)
   res.redirect('/urls')
@@ -229,10 +225,12 @@ app.post("/login", (req, res) => {
   const user = getUserByEmail(email)
   const password = req.body.password
   if (user === undefined) {
-    res.status(403).send("403: Not Found")
+    res.status(403).send("403: Email Not Found")
     return
-  } else if (user.email === email && user.password !== password) {
-    res.status(403).send("403: Not Found")
+  }
+  const hashedPasswordTrue = bcrypt.compareSync(password, user.password);
+  if (!hashedPasswordTrue) {
+    res.status(403).send("403: Incorrect Password")
     return
   } else {
     res.cookie('user_id', user.id)
