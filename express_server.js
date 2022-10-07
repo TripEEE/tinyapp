@@ -112,17 +112,14 @@ app.get("/urls", (req, res) => {
 
 //READ
 app.get("/urls/new", (req, res) => {
-  const templateVars = {
-    user: users[req.session.user_id
-    ]
-  }
   const userId = req.session.user_id
-  if (userId !== req.session.user_id
-  ) {
+  if (!userId) {
     return res.redirect("/login")
-  } else {
-    res.render("urls_new", templateVars);
   }
+  const templateVars = {
+    user: users[req.session.user_id]
+  }
+  res.render("urls_new", templateVars);
 });
 
 //READ
@@ -135,10 +132,8 @@ app.get("/register", (req, res) => {
     }
   }
   const templateVars = {
-    user: users[req.session.user_id
-    ]
+    user: null
   }
-  // const templateVars = { user: false }
   res.render("urls_registration", templateVars)
 })
 
@@ -180,7 +175,6 @@ app.post("/register", (req, res) => {
   const newUserID = generateRandomString()
   const newEmail = req.body.email//helper function
   const existingUser = getUserByEmail(newEmail, users)
-  console.log(existingUser)
   const newPassword = req.body.password
   const hashedPassword = bcrypt.hashSync(newPassword, 10)
   let user = { id: newUserID, email: newEmail, password: hashedPassword }
@@ -255,7 +249,7 @@ app.post("/login", (req, res) => {
     res.status(403).send("403: Incorrect Password")
     return
   } else {
-    req.session.user_id = 'key1'
+    req.session.user_id = user.id
     res.redirect("/urls")
   }
 })
