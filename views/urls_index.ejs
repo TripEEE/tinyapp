@@ -26,16 +26,16 @@
         </thead>
         <tbody>
           <!-- urls is urlDatabase in express_server.js -->
-          <% for (let shortURL in urlDatabase) { %>
+          <% for (let shortURL in urls) { %>
             <tr>
               <td>
-                <a href=" <%=urlDatabase[shortURL].longURL%>">
+                <a href=" <%=urls[shortURL].longURL%>">
                   <%= shortURL %>
                     <!--Column 1-->
                 </a>
               </td>
               <td>
-                <%= urlDatabase[shortURL].longURL %>
+                <%= urls[shortURL].longURL %>
                   <!--Column 2-->
               </td>
               <td>
