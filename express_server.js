@@ -9,6 +9,7 @@ const bcrypt = require("bcryptjs");
 const app = express()
 const PORT = 8080
 
+const { getUserByEmail } = require("./helpers.js")
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }))
 app.use(cookieSession({
@@ -29,8 +30,8 @@ const urlDatabase = {
 };
 
 const users = {
-  aJ48lW: {
-    id: "aJ48lW",
+  userRandomID: {
+    id: "userRandomID",
     email: "user@example.com",
     password: "test123!"
   },
@@ -43,19 +44,19 @@ const users = {
 
 //HELPER FUNCTIONS
 
-const getUserByEmail = function (email) {
-  for (let id in users) {
-    if (users[id].email === email) {
-      return users[id]
-    }
-  }
-}
+// const getUserByEmail = function (email, database) {
+//   for (let id in database) {
+//     if (database[id].email === email) {
+//       return database[id]
+//     }
+//   }
+// };
 
 const urlsForUser = function (userId) {
   const urls = {}
   const ids = Object.keys(urlDatabase) //shortURls
   for (let id of ids) { //objects of shortURLs
-    const url = urlDatabase[id] //
+    const url = urlDatabase[id]
     if (userId === url.userID) {
       urls[id] = url
     }
@@ -105,7 +106,6 @@ app.get("/urls", (req, res) => {
     res.send("<html><body>User undefined</body></html>\n");
   }
   const urls = urlsForUser(userId)
-  console.log(urls)
   const templateVars = { urls, user: users[userId] }; //urlDatabase above becomes urls in urls_index.js
   res.render("urls_index", templateVars);
 });
@@ -174,12 +174,13 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-//EDIT/REGISTER
+//REGISTER
 //add an id, email, and password to users object
 app.post("/register", (req, res) => {
   const newUserID = generateRandomString()
-  const newEmail = req.body.email
-  const existingUser = getUserByEmail(newEmail) //helper function
+  const newEmail = req.body.email//helper function
+  const existingUser = getUserByEmail(newEmail, users)
+  console.log(existingUser)
   const newPassword = req.body.password
   const hashedPassword = bcrypt.hashSync(newPassword, 10)
   let user = { id: newUserID, email: newEmail, password: hashedPassword }
@@ -204,19 +205,20 @@ app.post("/urls/:id", (req, res) => {
   //need to update an existing longURL
   const userId = req.session.user_id
 
-  if (userId !== users[req.params.id]) {
+  if (users[req.session.user_id] && userId !== users[req.session.user_id].id) {
     res.send("<html><body>Only the owner of the URL can edit!</body></html>\n");
   }
   const existingURL = req.params.id
-  urlDatabase[existingURL] = req.body
+  let longURL = urlDatabase[existingURL].longURL.longURL
+  longURL = req.body
+  console.log(urlDatabase)
   res.redirect('/urls')
 })
 
 //DELETE
 app.post("/urls/:id/delete", (req, res) => {
   const userId = req.session.user_id
-
-  if (userId !== users[req.params.id]) {
+  if (users[req.session.user_id] && userId !== users[req.session.user_id].id) {
     res.send("<html><body>Only the owner of the URL can delete!</body></html>\n");
   }
   delete urlDatabase[req.params.id] //deletes the respective URL
@@ -232,6 +234,7 @@ app.post("/urls", (req, res) => {
   const longURL = req.body.longURL //what the user inputs into the text field
 
   urlDatabase[newShortURL] = { longURL, userID: req.session.user_id }
+  console.log(urlDatabase[newShortURL])
 
   res.redirect(`/urls/${newShortURL}`)
 });
@@ -240,7 +243,7 @@ app.post("/urls", (req, res) => {
 
 app.post("/login", (req, res) => {
   const email = req.body.email
-  const user = getUserByEmail(email)
+  const user = getUserByEmail(email, users)
   const password = req.body.password
   if (user === undefined) {
     res.status(403).send("403: Email Not Found")
@@ -267,4 +270,3 @@ app.post("/logout", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`)
 })
-
