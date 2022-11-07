@@ -9,7 +9,7 @@ const bcrypt = require("bcryptjs");
 const app = express()
 const PORT = 8080
 
-const { getUserByEmail } = require("./helpers.js")
+const { getUserByEmail, generateRandomString } = require("./helpers.js")
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }))
 app.use(cookieSession({
@@ -17,7 +17,6 @@ app.use(cookieSession({
   maxAge: 24 * 60 * 60 * 1000
 }))
 app.use(cookieParser())
-
 const urlDatabase = {
   b6UTxQ: {
     longURL: "https://www.tsn.ca",
@@ -42,16 +41,6 @@ const users = {
   }
 }
 
-//HELPER FUNCTIONS
-
-// const getUserByEmail = function (email, database) {
-//   for (let id in database) {
-//     if (database[id].email === email) {
-//       return database[id]
-//     }
-//   }
-// };
-
 const urlsForUser = function (userId) {
   const urls = {}
   const ids = Object.keys(urlDatabase) //shortURls
@@ -62,16 +51,6 @@ const urlsForUser = function (userId) {
     }
   }
   return urls
-}
-
-const generateRandomString = function () {
-  let output = ''
-  const char = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-  const charLength = char.length
-  for (let i = 0; i < 6; i++) {
-    output += char.charAt(Math.floor(Math.random() * charLength))
-  }
-  return output
 }
 
 app.get("/", (req, res) => {
@@ -194,18 +173,17 @@ app.post("/register", (req, res) => {
 
 //EDIT
 app.post("/urls/:id", (req, res) => {
-  //update the value of the stored
-  //long URL based on the value of the new body
-  //need to update an existing longURL
   const userId = req.session.user_id
 
   if (users[req.session.user_id] && userId !== users[req.session.user_id].id) {
     res.send("<html><body>Only the owner of the URL can edit!</body></html>\n");
   }
+  // make the value of existing url to new short URL
   const existingURL = req.params.id
-  let longURL = urlDatabase[existingURL].longURL.longURL
-  longURL = req.body
-  console.log(urlDatabase)
+  const newShortURL = req.body.shortURL
+  const existingURLObj = urlDatabase[existingURL]
+  urlDatabase[newShortURL] = { ...existingURLObj };
+  delete urlDatabase[existingURL];
   res.redirect('/urls')
 })
 
@@ -228,7 +206,6 @@ app.post("/urls", (req, res) => {
   const longURL = req.body.longURL //what the user inputs into the text field
 
   urlDatabase[newShortURL] = { longURL, userID: req.session.user_id }
-  console.log(urlDatabase[newShortURL])
 
   res.redirect(`/urls/${newShortURL}`)
 });
