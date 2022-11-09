@@ -17,6 +17,7 @@ app.use(cookieSession({
   maxAge: 24 * 60 * 60 * 1000
 }))
 app.use(cookieParser())
+
 const urlDatabase = {
   b6UTxQ: {
     longURL: "https://www.tsn.ca",
@@ -174,16 +175,23 @@ app.post("/register", (req, res) => {
 //EDIT
 app.post("/urls/:id", (req, res) => {
   const userId = req.session.user_id
+  console.log({ body: req.body })
 
   if (users[req.session.user_id] && userId !== users[req.session.user_id].id) {
     res.send("<html><body>Only the owner of the URL can edit!</body></html>\n");
   }
-  // make the value of existing url to new short URL
-  const existingURL = req.params.id
-  const newShortURL = req.body.shortURL
-  const existingURLObj = urlDatabase[existingURL]
-  urlDatabase[newShortURL] = { ...existingURLObj };
-  delete urlDatabase[existingURL];
+  // make the value of existing url to new long URL
+  const existingURLId = req.params.id
+  //access longURL from urlDatabase
+  //change it to the value of the form body
+  //display that in main page
+  const existingURLObj = urlDatabase[existingURLId]
+  if (!existingURLObj) {
+    res.status(404)
+    return
+  }
+  existingURLObj.longURL = req.body.longURL
+  urlDatabase[existingURLId] = existingURLObj
   res.redirect('/urls')
 })
 
